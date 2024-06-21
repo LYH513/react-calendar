@@ -4,7 +4,7 @@ function Home(){
 
     return(
         <div>
-            변경사항 추가
+            변경사항 추가22
         </div>
     );
 }
