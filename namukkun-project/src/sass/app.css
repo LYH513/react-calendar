@@ -215,17 +215,14 @@ body {
         color: #769bff; }
 
 /* 하단 크기 조정 핸들 스타일 추가 */
-.resize-bottom {
-  position: absolute;
-  width: 100%;
-  height: 5px;
-  background-color: #000;
-  cursor: ns-resize;
-  left: 0;
-}
-
-.resize-bottom {
-  bottom: 0; /* 변경: 하단 핸들 위치 설정 */
+.resize-handle {
+	width: 100%;
+	height: 10px;
+	background: rgba(0, 0, 0, 0.2);
+	cursor: ns-resize;
+	position: absolute;
+	bottom: 0;
+	left: 0;
 }
 
 #panel {
