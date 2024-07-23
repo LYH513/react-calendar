@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../../../sass/app.css';
 import { editDate } from '../components/UserDataController';
 // store
@@ -9,11 +9,36 @@ import { useDragAndDrop } from '../../stores/dragAndDrop';
 
 const DailyCell = (props) => {
 	const { index, day, date, startHour, schedule } = props;
-	const [ addFormState, setAddFormState ] = useAddFormState();
+	const [addFormState, setAddFormState] = useAddFormState();
 	const { active } = addFormState;
-	const [ errorState, setErrorState ] = useErrorState();
-	const [ userData, setUserData ] = useUserData();
-	const [ dragAndDrop, setDragAndDrop ] = useDragAndDrop();
+	const [errorState, setErrorState] = useErrorState();
+	const [userData, setUserData] = useUserData();
+	const [dragAndDrop, setDragAndDrop] = useDragAndDrop();
+	const [isResizing, setIsResizing] = useState(false); // 리사이징 상태 추가
+
+	useEffect(() => {
+		const handleMouseUp = () => {
+			if (isResizing) {
+				setIsResizing(false);
+				document.body.classList.remove('resizing');
+			}
+		};
+
+		if (isResizing) {
+			document.body.classList.add('resizing');
+			document.querySelectorAll('.weekly-schedule').forEach(el => el.classList.add('resizing'));
+			document.addEventListener('mouseup', handleMouseUp);
+		} else {
+			document.body.classList.remove('resizing');
+			document.querySelectorAll('.weekly-schedule').forEach(el => el.classList.remove('resizing'));
+		}
+
+		return () => {
+			document.body.classList.remove('resizing');
+			document.querySelectorAll('.weekly-schedule').forEach(el => el.classList.remove('resizing'));
+			document.removeEventListener('mouseup', handleMouseUp);
+		};
+	}, [isResizing]);
 
 	const height = schedule
 		? {
@@ -22,7 +47,7 @@ const DailyCell = (props) => {
 		: null;
 
 	const onClickDate = () => {
-		if (!active) {
+		if (!active && !isResizing) { // 리사이징 중일 때 클릭 방지
 			setAddFormState({
 				...addFormState,
 				active: true,
@@ -38,7 +63,7 @@ const DailyCell = (props) => {
 	const onClickSchedule = (e, schedule) => {
 		e.stopPropagation();
 		const { title, curDate, startHour, endHour } = schedule;
-		if (!active) {
+		if (!active && !isResizing) { // 리사이징 중일 때 클릭 방지
 			setAddFormState({
 				...addFormState,
 				active: true,
@@ -75,7 +100,9 @@ const DailyCell = (props) => {
 	};
 
 	const onDragCell = (e) => {
-		setDragAndDrop({ ...dragAndDrop, from: schedule });
+		if (!isResizing) { // 리사이징 중일 때 드래그 방지
+			setDragAndDrop({ ...dragAndDrop, from: schedule });
+		}
 	};
 
 	const onDragEnterCell = (e) => {
@@ -86,11 +113,17 @@ const DailyCell = (props) => {
 	};
 
 	const onResizeMouseDown = (e, schedule) => {
-		// 리사이즈 관련 이벤트 핸들러 정의
+		e.preventDefault(); // 기본 동작 방지
+		e.stopPropagation(); // 클릭 이벤트 상위 전파 방지
+
+		const initialY = e.clientY;
+		const initialEndHour = schedule.endHour;
+
+		// 마우스 이동 핸들러 정의
 		const onResizeMouseMove = (e) => {
 			const newY = e.clientY;
-			const hourDifference = Math.round((initialY - newY) / 50); // 50px을 1시간으로 가정
-			const newEndHour = Math.max(initialEndHour - hourDifference, startHour + 1); // 끝 시간이 시작 시간보다 작아지지 않도록
+			const hourDifference = Math.round((newY - initialY) / 50); // 50px을 1시간으로 가정
+			const newEndHour = Math.max(initialEndHour + hourDifference, schedule.startHour + 1); // 끝 시간이 시작 시간보다 작아지지 않도록
 
 			// 일정의 끝 시간을 업데이트합니다.
 			setUserData({
@@ -101,18 +134,17 @@ const DailyCell = (props) => {
 			});
 		};
 
+		// 마우스 업 핸들러 정의
 		const onResizeMouseUp = () => {
 			document.removeEventListener('mousemove', onResizeMouseMove);
 			document.removeEventListener('mouseup', onResizeMouseUp);
+			setIsResizing(false);
+			document.body.classList.remove('resizing');
 		};
-
-		// 초기 상태 설정
-		const initialY = e.clientY;
-		const initialEndHour = schedule.endHour;
 
 		document.addEventListener('mousemove', onResizeMouseMove);
 		document.addEventListener('mouseup', onResizeMouseUp);
-		e.preventDefault();
+		setIsResizing(true);
 	};
 
 	if (index === 0) {
@@ -134,7 +166,7 @@ const DailyCell = (props) => {
 		<div className="weekly-cell" onClick={onClickDate} onDragEnter={onDragEnterCell} onDragEnd={onDropSchedule}>
 			{schedule ? (
 				<div
-					className="weekly-schedule"
+					className={`weekly-schedule ${isResizing ? 'resizing' : ''}`}
 					style={height}
 					onClick={(e) => onClickSchedule(e, schedule)}
 					draggable
