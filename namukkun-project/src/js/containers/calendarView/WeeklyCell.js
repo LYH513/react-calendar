@@ -9,11 +9,36 @@ import { useDragAndDrop } from '../../stores/dragAndDrop';
 
 const WeeklyCell = (props) => {
 	const { index, day, date, startHour, schedule } = props;
-	const [ addFormState, setAddFormState ] = useAddFormState();
+	const [addFormState, setAddFormState] = useAddFormState();
 	const { active } = addFormState;
-	const [ errorState, setErrorState ] = useErrorState();
-	const [ userData, setUserData ] = useUserData();
-	const [ dragAndDrop, setDragAndDrop ] = useDragAndDrop();
+	const [errorState, setErrorState] = useErrorState();
+	const [userData, setUserData] = useUserData();
+	const [dragAndDrop, setDragAndDrop] = useDragAndDrop();
+	const [isResizing, setIsResizing] = useState(false); // 리사이징 상태 추가
+
+	useEffect(() => {
+		const handleMouseUp = () => {
+			if (isResizing) {
+				setIsResizing(false);
+				document.body.classList.remove('resizing');
+			}
+		};
+
+		if (isResizing) {
+			document.body.classList.add('resizing');
+			document.querySelectorAll('.weekly-schedule').forEach(el => el.classList.add('resizing'));
+			document.addEventListener('mouseup', handleMouseUp);
+		} else {
+			document.body.classList.remove('resizing');
+			document.querySelectorAll('.weekly-schedule').forEach(el => el.classList.remove('resizing'));
+		}
+
+		return () => {
+			document.body.classList.remove('resizing');
+			document.querySelectorAll('.weekly-schedule').forEach(el => el.classList.remove('resizing'));
+			document.removeEventListener('mouseup', handleMouseUp);
+		};
+	}, [isResizing]);
 
 	const height = schedule
 		? {
@@ -22,7 +47,7 @@ const WeeklyCell = (props) => {
 		: null;
 
 	const onClickDate = () => {
-		if (!active) {
+		if (!active && !isResizing) { // 리사이징 중일 때 클릭 방지
 			setAddFormState({
 				...addFormState,
 				active: true,
@@ -38,7 +63,7 @@ const WeeklyCell = (props) => {
 	const onClickSchedule = (e, schedule) => {
 		e.stopPropagation();
 		const { title, curDate, startHour, endHour } = schedule;
-		if (!active) {
+		if (!active && !isResizing) { // 리사이징 중일 때 클릭 방지
 			setAddFormState({
 				...addFormState,
 				active: true,
@@ -75,7 +100,9 @@ const WeeklyCell = (props) => {
 	};
 
 	const onDragCell = (e) => {
-		setDragAndDrop({ ...dragAndDrop, from: schedule });
+		if (!isResizing) { // 리사이징 중일 때 드래그 방지
+			setDragAndDrop({ ...dragAndDrop, from: schedule });
+		}
 	};
 
 	const onDragEnterCell = (e) => {
@@ -83,6 +110,41 @@ const WeeklyCell = (props) => {
 		const diff = from.endHour - from.startHour;
 		const newScheduleForm = { title: from.title, curDate: date, startHour, endHour: startHour + diff };
 		setDragAndDrop({ ...dragAndDrop, to: newScheduleForm });
+	};
+
+	const onResizeMouseDown = (e, schedule) => {
+		e.preventDefault(); // 기본 동작 방지
+		e.stopPropagation(); // 클릭 이벤트 상위 전파 방지
+
+		const initialY = e.clientY;
+		const initialEndHour = schedule.endHour;
+
+		// 마우스 이동 핸들러 정의
+		const onResizeMouseMove = (e) => {
+			const newY = e.clientY;
+			const hourDifference = Math.round((newY - initialY) / 50); // 50px을 1시간으로 가정
+			const newEndHour = Math.max(initialEndHour + hourDifference, schedule.startHour + 1); // 끝 시간이 시작 시간보다 작아지지 않도록
+
+			// 일정의 끝 시간을 업데이트합니다.
+			setUserData({
+				...userData,
+				schedule: userData.schedule.map((item) =>
+					item === schedule ? { ...item, endHour: newEndHour } : item
+				),
+			});
+		};
+
+		// 마우스 업 핸들러 정의
+		const onResizeMouseUp = () => {
+			document.removeEventListener('mousemove', onResizeMouseMove);
+			document.removeEventListener('mouseup', onResizeMouseUp);
+			setIsResizing(false);
+			document.body.classList.remove('resizing');
+		};
+
+		document.addEventListener('mousemove', onResizeMouseMove);
+		document.addEventListener('mouseup', onResizeMouseUp);
+		setIsResizing(true);
 	};
 
 	if (index === 0) {
@@ -104,7 +166,7 @@ const WeeklyCell = (props) => {
 		<div className="weekly-cell" onClick={onClickDate} onDragEnter={onDragEnterCell} onDragEnd={onDropSchedule}>
 			{schedule ? (
 				<div
-					className="weekly-schedule"
+					className={`weekly-schedule ${isResizing ? 'resizing' : ''}`}
 					style={height}
 					onClick={(e) => onClickSchedule(e, schedule)}
 					draggable
@@ -112,6 +174,10 @@ const WeeklyCell = (props) => {
 				>
 					<p>{schedule.startHour + '시 ~ ' + schedule.endHour + '시'}</p>
 					<p>{schedule.title}</p>
+					<div
+						className="resize-handle"
+						onMouseDown={(e) => onResizeMouseDown(e, schedule)}
+					></div>
 				</div>
 			) : null}
 		</div>
