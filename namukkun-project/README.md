@@ -1,2 +1,11 @@
-# openAI를 사용한 나만의 페르소나 만들기
-### npm install --save openai
+#  달력 일정 관리
+
+---
+
+### 참고 자료: https://github.com/nohtaesang/calendar 
+
+---
+### 라이브러리 
+#### npm install
+#### npm install react-datepicker
+
