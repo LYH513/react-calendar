@@ -128,6 +128,8 @@ body {
             margin: 0; }
         #calendar-view #monthly-view .monthly-row .monthly-cell:nth-child(1) {
           border-left: solid 1px #111; }
+
+
   #calendar-view #weekly-view {
     width: 900px;
     display: flex;
@@ -188,7 +190,8 @@ body {
           margin: 5px;
           border-radius: 5px;
           z-index: 3;
-          cursor: pointer; }
+          cursor: pointer;
+          position: relative;  }
           #calendar-view #weekly-view .weekly-col .weekly-cell .weekly-schedule:hover {
             opacity: 0.5; }
           #calendar-view #weekly-view .weekly-col .weekly-cell .weekly-schedule p {
@@ -210,6 +213,20 @@ body {
         color: #ef7a8b; }
       #calendar-view #weekly-view .weekly-col .saturday {
         color: #769bff; }
+
+/* 하단 크기 조정 핸들 스타일 추가 */
+.resize-bottom {
+  position: absolute;
+  width: 100%;
+  height: 5px;
+  background-color: #000;
+  cursor: ns-resize;
+  left: 0;
+}
+
+.resize-bottom {
+  bottom: 0; /* 변경: 하단 핸들 위치 설정 */
+}
 
 #panel {
   display: flex;
