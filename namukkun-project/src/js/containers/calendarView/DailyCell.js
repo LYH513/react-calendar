@@ -85,14 +85,6 @@ const DailyCell = (props) => {
 		setDragAndDrop({ ...dragAndDrop, to: newScheduleForm });
 	};
 
-	if (index === 0) {
-		return (
-			<div className={day === '일' ? 'weekly-cell sunday' : day === '토' ? 'weekly-cell saturday' : 'weekly-cell'}>
-				{day}
-			</div>
-		);
-	}
-
 	if (index === 1)
 		return (
 			<div className={day === '일' ? 'weekly-cell sunday' : day === '토' ? 'weekly-cell saturday' : 'weekly-cell'}>
