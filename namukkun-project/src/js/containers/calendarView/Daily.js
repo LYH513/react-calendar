@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import '../../../sass/app.css';
-// import WeeklyCell from './WeeklyCell';
 import DailyCell from './DailyCell';
 import { getSchedule } from '../components/UserDataController';
 // store
 import { useCalendarState } from '../../stores/calendarState';
 import { useUserData } from '../../stores/userData';
-
-
 const Daily = () => {
 	const [ calendarState, setCalendarState ] = useCalendarState();
 	const { date } = calendarState;
