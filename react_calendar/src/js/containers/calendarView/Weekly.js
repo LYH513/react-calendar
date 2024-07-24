@@ -112,7 +112,7 @@ const Weekly = () => {
 			}
 		}
 
-		console.log('cur',curDateSchedule );
+		// console.log('cur',curDateSchedule );
 		
 		return curDateSchedule;
 	};

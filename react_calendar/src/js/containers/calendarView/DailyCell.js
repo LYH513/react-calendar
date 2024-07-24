@@ -7,7 +7,7 @@ import { useAddFormState } from '../../stores/addFormState';
 import { useUserData } from '../../stores/userData';
 import { useDragAndDrop } from '../../stores/dragAndDrop';
 
-const WeeklyCell = (props) => {
+const DailyCell = (props) => {
     const { index, day, date, startHour, schedule } = props;
     const [addFormState, setAddFormState] = useAddFormState();
     const { active } = addFormState;
@@ -15,8 +15,9 @@ const WeeklyCell = (props) => {
     const [userData, setUserData] = useUserData();
     const [dragAndDrop, setDragAndDrop] = useDragAndDrop();
     const [isResizing, setIsResizing] = useState(false); // 리사이징 상태 추가
-    
-    console.log("스케줄", schedule, startHour);
+
+    // console.log('주간 스케줄, 시간 프롭스', schedule, startHour);
+    const [propsHour, propsMin] = (typeof startHour === 'string' ? startHour.split(':') : ['0', '0']).map(Number);
 
     // 마우스 업 이벤트를 처리하여 리사이징 종료
     useEffect(() => {
@@ -43,21 +44,29 @@ const WeeklyCell = (props) => {
         };
     }, [isResizing]);
 
+    // 분값을 15분 단위로 구간 나누어 변환하는 함수
+    const to15MinRange = (minutes) => {
+        if (minutes < 15) return 0;
+        if (minutes < 30) return 15;
+        if (minutes < 45) return 30;
+        return 45;
+    };
+    // 50은 일정 한칸의 크기 , 22는 마진값?, 15는 분범위
+    // 시간과 분을 분 단위로 변환하여 높이 계산
     const height = schedule
-        ? {
-                height: (schedule.endTime.hour - schedule.startTime.hour) * 50 - 22 + 'px'
-            }
-        : null;
+    ? {
+            height: (( (schedule.endTime.hour * 60 + to15MinRange(schedule.endTime.minute)) - (schedule.startTime.hour * 60 + to15MinRange(schedule.startTime.minute)) ) / 15 * 50 - 22) + 'px'
+        }
+    : null;
+
 
 	//빈 셀 클릭후 일정 추가
 	const onClickDate = () => {
 		if (!active&& !isResizing) {
-			const now = new Date();
-			const startHour = now.getHours();
-			const startMinute = now.getMinutes(); 
-			const endHour = startHour + 1;
-	
-			console.log("빈셀", { hour: startHour, minute: startMinute });
+			// const now = new Date();
+			// const startHour = now.getHours();
+			// const startMinute = now.getMinutes(); 
+			// const endHour = startHour + 1;
 	
 			setAddFormState({
 				...addFormState,
@@ -66,13 +75,13 @@ const WeeklyCell = (props) => {
 				title: '',
 				curDate: date, // Date 객체 그대로 유지
 				startTime: { 
-					hour: startHour, 
-					minute: startMinute, 
+					hour: propsHour, 
+					minute: propsMin, 
 					second: 0, 
 					nano:0 }, // 새로운 시간 형식 적용
 				endTime: { 
-					hour: endHour, 
-					minute: startMinute, 
+					hour: propsHour +1, 
+					minute: propsMin, 
 					second: 0, 
 					nano:0 } // 새로운 시간 형식 적용
 			});
@@ -106,29 +115,34 @@ const WeeklyCell = (props) => {
 
         // Y좌표의 차이 계산
         const yDifference = e.clientY - initialY;
-        const hourDifference = Math.round(yDifference / 50); // 50px = 1시간
+        const Difference = Math.round(yDifference / 50)*15; // 50px = 15분씩 , 분 형태로 바꿈
 
         // 새로운 시작 시간과 끝 시간 계산
-        const newStartHour = to.startTime.hour + hourDifference;
+        const newStartTotalMin = (to.startTime.hour*60)+to.startTime.minute + Difference;
+        
         // 기존 시간차 유지 + 끝 시간이 24를 넘지 않도록 보장
-        const newEndHour = Math.min(newStartHour + (from.endTime.hour - from.startTime.hour), 24);
+        const newEndHour = Math.min(newStartTotalMin + ((from.endTime.hour*60 + from.endTime.minute) - (from.startTime.hour*60 +from.startTime.minute)), 24*60);
 
         // 기존 일정 업데이트
         const updatedSchedule = userData.schedule.map(item =>
             item === from ? { ...item, 
                 startTime: { 
                     ... from.startTime, 
-                    hour: newStartHour}, 
+                    hour: Math.floor(newStartTotalMin/60),
+                    minute:  newStartTotalMin%60
+                }, 
                 endTime: {
                     ...from.endTime,
-                    hour: newEndHour}, 
+                    hour: Math.floor(newEndHour/60),
+                    minute: newEndHour%60
+                }, 
                 curDate: date } : item
         );
 
         console.log("from", from);
         console.log("to", to);
         console.log("Y difference:", yDifference);
-        console.log("New start hour:", newStartHour);
+        console.log("New start hour:", newStartTotalMin);
         console.log("New end hour:", newEndHour);
 
         // 일정 업데이트
@@ -146,15 +160,18 @@ const WeeklyCell = (props) => {
         e.preventDefault();
         const { from } = dragAndDrop;
         console.log('드래그', from);
-        const diff = from.endTime.hour - from.startTime.hour;
+        const diff = (from.endTime.hour*60 + from.endTime.minute) - (from.startTime.hour*60 +from.startTime.minute);
+
         const newScheduleForm = { title: from.title, curDate: date,
             startTime :{
                 ...from.startTime,
-                hour: startHour
+                hour: propsHour,
+                minute: propsMin
             },
             endTime:{
                 ...from.endTime,
-                hour: startHour + diff
+                hour: propsHour + Math.floor(diff/60),
+                minute: propsMin +(diff%60)
             }};
 
         // 현재 Y좌표 저장
@@ -162,11 +179,10 @@ const WeeklyCell = (props) => {
 
         // 콘솔에 시작 시간 변화를 로그로 출력
         console.log("Original start hour:", from.startTime.hour);
-        console.log("New start hour", startHour);
+        console.log("New start hour", propsHour);
     };
 
 //리사이징
-
     const onDragCell = (e) => {
         if (!isResizing) { // 리사이징 중일 때 드래그 방지
             setDragAndDrop({ ...dragAndDrop, from: schedule });
@@ -177,16 +193,16 @@ const WeeklyCell = (props) => {
         e.preventDefault(); // 기본 동작 방지
         e.stopPropagation(); // 클릭 이벤트 상위 전파 방지
 
+        console.log('주간 리사이징', schedule);
+
         const initialY = e.clientY;
-        const initialEndHour = schedule.endTime.hour;
+        const initialEndMinute = schedule.endTime.hour * 60 + schedule.endTime.minute;
 
         // 마우스 이동 핸들러 정의
         const onResizeMouseMove = (e) => {
             const newY = e.clientY;
-            const hourDifference = Math.round((newY - initialY) / 50); // 50px을 1시간으로 가정
-
-            //시작시간보다 작아지지 않도록 +1, 24시간을 넘지 않도록
-            const newEndHour = Math.min(Math.max(initialEndHour + hourDifference, schedule.startTime.hour + 1), 24);
+            const minDifference = Math.round((newY - initialY) / 50) * 15; // 50px = 15분
+            const newEndMinute = Math.min(Math.max(initialEndMinute + minDifference, schedule.startTime.hour * 60 + schedule.startTime.minute + 15), 24 * 60); // 최소 15분 증가, 최대 24시간
 
             // 일정의 끝 시간을 업데이트합니다.
             setUserData({
@@ -195,7 +211,10 @@ const WeeklyCell = (props) => {
                     item === schedule ? { ...item, 
                         endTime: {
                             ...schedule.endTime,
-                            hour: newEndHour} } : item
+                            hour: Math.floor(newEndMinute / 60),
+                            minute: newEndMinute % 60
+                        } 
+                    } : item
                 ),
             });
         };
@@ -256,4 +275,4 @@ const WeeklyCell = (props) => {
     );
 };
 
-export default WeeklyCell;
+export default DailyCell;
