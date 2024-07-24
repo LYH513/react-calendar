@@ -63,10 +63,6 @@ const WeeklyCell = (props) => {
 	//빈 셀 클릭후 일정 추가
 	const onClickDate = () => {
 		if (!active&& !isResizing) {
-			// const now = new Date();
-			// const startHour = now.getHours();
-			// const startMinute = now.getMinutes(); 
-			// const endHour = startHour + 1;
 	
 			setAddFormState({
 				...addFormState,
@@ -119,9 +115,10 @@ const WeeklyCell = (props) => {
 
         // 새로운 시작 시간과 끝 시간 계산
         const newStartTotalMin = (to.startTime.hour*60)+to.startTime.minute + Difference;
-        
+
         // 기존 시간차 유지 + 끝 시간이 24를 넘지 않도록 보장
         const newEndHour = Math.min(newStartTotalMin + ((from.endTime.hour*60 + from.endTime.minute) - (from.startTime.hour*60 +from.startTime.minute)), 24*60);
+
 
         // 기존 일정 업데이트
         const updatedSchedule = userData.schedule.map(item =>
