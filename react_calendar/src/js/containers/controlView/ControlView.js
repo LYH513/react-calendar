@@ -49,7 +49,6 @@ const ControlView = () => {
 	};
 
 	const onClickModeController = (selectedMode) => {
-		// const nextMode = mode === 'monthly' ? 'weekly' : mode === 'weekly' ? 'daily' : 'monthly'; 
 		setCalendarState({ ...calendarState, mode: selectedMode });
 	};
 

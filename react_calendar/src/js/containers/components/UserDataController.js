@@ -49,11 +49,11 @@ export const isConflict = (curDate, startHour, endHour, schedule) => {
 };
 
 export const insertDate = (addFormState, schedule) => {
-	const { title, curDate, startHour, endHour } = addFormState;
-	const index = isConflict(curDate, startHour, endHour, schedule);
+	const { title, curDate, startTime, endTime } = addFormState;
+	const index = isConflict(curDate, startTime, endTime, schedule);
 
 	if (index !== -1) {
-		const newItem = { title, curDate, startHour, endHour };
+		const newItem = { title, curDate, startTime, endTime };
 		return [ ...schedule.slice(0, index), newItem, ...schedule.slice(index) ];
 	} else {
 		return false;
@@ -61,15 +61,17 @@ export const insertDate = (addFormState, schedule) => {
 };
 
 export const editDate = (addFormState, beforeEdit, schedule) => {
-	const { title, curDate, startHour, endHour } = addFormState;
+	const { title, curDate, startTime, endTime } = addFormState;
 
 	// 이전 할일을 지우고
-	const newSchedule = deleteDate(beforeEdit.curDate, beforeEdit.startHour, beforeEdit.endHour, schedule);
+	const newSchedule = deleteDate(beforeEdit.curDate, beforeEdit.startTime, beforeEdit.endTime, schedule);
+	
 	// 새 할일을 추가하는데
-	const index = isConflict(curDate, startHour, endHour, newSchedule);
+	const index = isConflict(curDate, startTime, endTime, newSchedule);
 	if (index !== -1) {
 		// 추가에 성공
-		const newItem = { title, curDate, startHour, endHour };
+		const newItem = { title, curDate, startTime, endTime };
+		console.log('edit', newItem);
 		return [ ...newSchedule.slice(0, index), newItem, ...newSchedule.slice(index) ];
 	} else {
 		// 추가하려는 곳이 중복이면 작업 취소
@@ -77,17 +79,15 @@ export const editDate = (addFormState, beforeEdit, schedule) => {
 	}
 };
 
-export const deleteDate = (curDate, startHour, endHour, schedule) => {
-	let index = schedule.findIndex(
-		(el) =>
-			el.curDate.getTime() === curDate.getTime() && el.startHour === startHour && el.endHour === endHour
-				? true
-				: false
+export const deleteDate = (curDate, startTime, endTime, schedule) => {
+	// 기존 schedule에서 curDate, startTime, endTime와 일치하는 항목을 찾아서 삭제
+	return schedule.filter(
+			(item) =>
+					!(item.curDate.getTime() === curDate.getTime() &&
+						item.startTime.hour === startTime.hour &&
+						item.startTime.minute === startTime.minute &&
+						item.endTime.hour === endTime.hour &&
+						item.endTime.minute === endTime.minute)
 	);
-
-	if (index !== -1) {
-		return [ ...schedule.slice(0, index), ...schedule.slice(index + 1) ];
-	}
-
-	return schedule;
 };
+

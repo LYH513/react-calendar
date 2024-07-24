@@ -26,24 +26,41 @@ const MonthlyCell = (props) => {
 		[ schedule ]
 	);
 
+	//빈 셀 클릭후 일정 추가
 	const onClickDate = () => {
 		if (!active) {
-			const startHour = new Date().getHours();
+			const now = new Date();
+			const startHour = now.getHours();
+			const startMinute = now.getMinutes(); 
+			const endHour = startHour + 1;
+	
+			console.log("빈셀", { hour: startHour, minute: startMinute });
+	
 			setAddFormState({
 				...addFormState,
 				active: true,
 				mode: 'add',
 				title: '',
-				curDate: date,
-				startHour: startHour,
-				endHour: startHour + 1
+				curDate: date, // Date 객체 그대로 유지
+				startTime: { 
+					hour: startHour, 
+					minute: startMinute, 
+					second: 0, 
+					nano:0 }, // 새로운 시간 형식 적용
+				endTime: { 
+					hour: endHour, 
+					minute: startMinute, 
+					second: 0, 
+					nano:0 } // 새로운 시간 형식 적용
 			});
 		}
 	};
+	
 
+	//일정 클릭 후 수정
 	const onClickSchedule = (e, schedule) => {
 		e.stopPropagation();
-		const { title, curDate, startHour, endHour } = schedule;
+		const { title, curDate, startTime, endTime } = schedule;
 
 		if (!active) {
 			setAddFormState({
@@ -52,8 +69,8 @@ const MonthlyCell = (props) => {
 				mode: 'edit',
 				title: title,
 				curDate: curDate,
-				startHour: startHour,
-				endHour: endHour
+				startTime: { ...startTime}, // 새로운 시간 형식 적용
+				endTime: { ... endTime}
 			});
 		}
 	};
@@ -85,13 +102,13 @@ const MonthlyCell = (props) => {
 	};
 
 	const onDragEnterCell = (e) => {
-		const { title, startHour, endHour } = dragAndDrop.from;
-		const newScheduleForm = { title: title, curDate: date, startHour: startHour, endHour: endHour };
+		const { title, startTime, endTime } = dragAndDrop.from;
+		const newScheduleForm = { title: title, curDate: date, startTime: { ... startTime}, endTime: { ... endTime} };
 		setDragAndDrop({ ...dragAndDrop, to: newScheduleForm });
 	};
 
 	return (
-		<div className="monthly-cell" onClick={onClickDate} onDragEnter={onDragEnterCell} onDragEnd={onDropSchedule} onDragOver={(e) => e.preventDefault()} >
+		<div className="monthly-cell" onClick={onClickDate} onDragEnter={onDragEnterCell} onDragEnd={onDropSchedule}>
 			<p>{curDateStr}</p>
 
 			{schedule.map((a, i) => (
