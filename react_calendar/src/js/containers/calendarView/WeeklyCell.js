@@ -51,8 +51,7 @@ const WeeklyCell = (props) => {
         if (minutes < 45) return 30;
         return 45;
     };
-
-    // 50은 일정 한칸의 크기 , 22는 마진값?
+    // 50은 일정 한칸의 크기 , 22는 마진값?, 15는 분범위
     // 시간과 분을 분 단위로 변환하여 높이 계산
     const height = schedule
     ? {
@@ -184,7 +183,6 @@ const WeeklyCell = (props) => {
     };
 
 //리사이징
-
     const onDragCell = (e) => {
         if (!isResizing) { // 리사이징 중일 때 드래그 방지
             setDragAndDrop({ ...dragAndDrop, from: schedule });
@@ -195,16 +193,16 @@ const WeeklyCell = (props) => {
         e.preventDefault(); // 기본 동작 방지
         e.stopPropagation(); // 클릭 이벤트 상위 전파 방지
 
+        console.log('주간 리사이징', schedule);
+
         const initialY = e.clientY;
-        const initialEndHour = schedule.endTime.hour;
+        const initialEndMinute = schedule.endTime.hour * 60 + schedule.endTime.minute;
 
         // 마우스 이동 핸들러 정의
         const onResizeMouseMove = (e) => {
             const newY = e.clientY;
-            const hourDifference = Math.round((newY - initialY) / 50); // 50px을 1시간으로 가정
-
-            //시작시간보다 작아지지 않도록 +1, 24시간을 넘지 않도록
-            const newEndHour = Math.min(Math.max(initialEndHour + hourDifference, schedule.startTime.hour + 1), 24);
+            const minDifference = Math.round((newY - initialY) / 50) * 15; // 50px = 15분
+            const newEndMinute = Math.min(Math.max(initialEndMinute + minDifference, schedule.startTime.hour * 60 + schedule.startTime.minute + 15), 24 * 60); // 최소 15분 증가, 최대 24시간
 
             // 일정의 끝 시간을 업데이트합니다.
             setUserData({
@@ -213,7 +211,10 @@ const WeeklyCell = (props) => {
                     item === schedule ? { ...item, 
                         endTime: {
                             ...schedule.endTime,
-                            hour: newEndHour} } : item
+                            hour: Math.floor(newEndMinute / 60),
+                            minute: newEndMinute % 60
+                        } 
+                    } : item
                 ),
             });
         };
