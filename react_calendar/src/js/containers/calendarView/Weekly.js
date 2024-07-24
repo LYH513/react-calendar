@@ -89,6 +89,8 @@ const Weekly = () => {
 	const getCurDateSchedule = (curDate, startHour) => {
 		let curDateSchedule = null;
 
+		console.log('주간 curSchedule',curSchedule);
+
 		for (let i = 0; i < curSchedule.length; i++) {
 			if (curDate.getTime() === curSchedule[i].curDate.getTime() && curSchedule[i].startHour === startHour) {
 				curDateSchedule = curSchedule[i];
@@ -108,6 +110,7 @@ const Weekly = () => {
 					</div>
 				))}
 			</div>
+			{console.log('주간 dates형식', dates)}
 			{dates.map((a, i) => (
 				<div key={i} className="weekly-col">
 					{a.map((b, j) => (
