@@ -16,6 +16,7 @@ const WeeklyCell = (props) => {
     const [dragAndDrop, setDragAndDrop] = useDragAndDrop();
     const [isResizing, setIsResizing] = useState(false); // 리사이징 상태 추가
 
+    // 마우스 업 이벤트를 처리하여 리사이징 종료
     useEffect(() => {
         const handleMouseUp = () => {
             if (isResizing) {
@@ -80,12 +81,26 @@ const WeeklyCell = (props) => {
         e.preventDefault();
         if (dragAndDrop.to.endHour > 24) return;
 
-        const { from, to } = dragAndDrop;
+        const { from, to, initialY } = dragAndDrop;
+
+        // Y좌표의 차이 계산
+        const yDifference = e.clientY - initialY;
+        const hourDifference = Math.round(yDifference / 50); // 50px = 1시간
+
+        // 새로운 시작 시간과 끝 시간 계산
+        const newStartHour = to.startHour + hourDifference;
+        const newEndHour = newStartHour + (from.endHour - from.startHour); // 기존 시간 차이를 유지
 
         // 기존 일정 업데이트
         const updatedSchedule = userData.schedule.map(item =>
-            item === from ? { ...item, ...to, curDate: date } : item
+            item === from ? { ...item, startHour: newStartHour, endHour: newEndHour, curDate: date } : item
         );
+
+        console.log("from", from);
+        console.log("to", to);
+        console.log("Y difference:", yDifference);
+        console.log("New start hour:", newStartHour);
+        console.log("New end hour:", newEndHour);
 
         // 일정 업데이트
         setUserData({ ...userData, schedule: updatedSchedule });
@@ -94,7 +109,7 @@ const WeeklyCell = (props) => {
             ...errorState,
             active: true,
             mode: 'edit',
-            message: [ [ '일정이 수정 되었습니다.' ] ]
+            message: [['일정이 수정 되었습니다.']]
         });
     };
 
@@ -109,7 +124,13 @@ const WeeklyCell = (props) => {
         const { from } = dragAndDrop;
         const diff = from.endHour - from.startHour;
         const newScheduleForm = { title: from.title, curDate: date, startHour, endHour: startHour + diff };
-        setDragAndDrop({ ...dragAndDrop, to: newScheduleForm });
+
+        // 현재 Y좌표 저장
+        setDragAndDrop({ ...dragAndDrop, to: newScheduleForm, initialY: e.clientY });
+
+        // 콘솔에 시작 시간 변화를 로그로 출력
+        console.log("Original start hour:", from.startHour);
+        console.log("New start hour", startHour);
     };
 
     const onResizeMouseDown = (e, schedule) => {
@@ -177,6 +198,7 @@ const WeeklyCell = (props) => {
                     <div
                         className="resize-handle"
                         onMouseDown={(e) => onResizeMouseDown(e, schedule)}
+                        onClick={(e) => e.stopPropagation()}
                     ></div>
                 </div>
             ) : null}
