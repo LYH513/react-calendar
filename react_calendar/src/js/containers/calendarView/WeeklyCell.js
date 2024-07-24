@@ -15,6 +15,8 @@ const WeeklyCell = (props) => {
     const [userData, setUserData] = useUserData();
     const [dragAndDrop, setDragAndDrop] = useDragAndDrop();
     const [isResizing, setIsResizing] = useState(false); // 리사이징 상태 추가
+    
+    // console.log("스케줄", schedule, startHour);
 
     // 마우스 업 이벤트를 처리하여 리사이징 종료
     useEffect(() => {
