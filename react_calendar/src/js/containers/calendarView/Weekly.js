@@ -56,6 +56,7 @@ const Weekly = () => {
 		() => {
 			const { firstDate, lastDate } = getFirstAndLastDate();
 			setCurSchedule(getSchedule(firstDate, lastDate, schedule));
+			console.log('주간 일정',curSchedule );
 		},
 		[ userData ]
 	);
@@ -73,6 +74,7 @@ const Weekly = () => {
 		let tempDate = new Date(firstDate);
 		const newDates = [ [ '일' ], [ '월' ], [ '화' ], [ '수' ], [ '목' ], [ '금' ], [ '토' ] ];
 		const tempTime = [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23 ];
+		
 		let index = 0;
 		while (tempDate.getDate() !== lastDate.getDate()) {
 			newDates[index].push(tempDate);
@@ -90,7 +92,10 @@ const Weekly = () => {
 		let curDateSchedule = null;
 
 		for (let i = 0; i < curSchedule.length; i++) {
-			if (curDate.getTime() === curSchedule[i].curDate.getTime() && curSchedule[i].startHour === startHour) {
+			console.log('주간 curSchedule',curSchedule);
+			// console.log('주간 1',curDate);
+
+			if (curDate.getTime() === curSchedule[i].curDate.getTime() && curSchedule[i].startTime.hour === startHour) {
 				curDateSchedule = curSchedule[i];
 				break;
 			}
@@ -108,6 +113,7 @@ const Weekly = () => {
 					</div>
 				))}
 			</div>
+			{console.log('주간 dates형식', dates)}
 			{dates.map((a, i) => (
 				<div key={i} className="weekly-col">
 					{a.map((b, j) => (

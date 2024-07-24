@@ -15,6 +15,8 @@ const WeeklyCell = (props) => {
     const [userData, setUserData] = useUserData();
     const [dragAndDrop, setDragAndDrop] = useDragAndDrop();
     const [isResizing, setIsResizing] = useState(false); // 리사이징 상태 추가
+    
+    console.log("스케줄", schedule, startHour);
 
     // 마우스 업 이벤트를 처리하여 리사이징 종료
     useEffect(() => {
@@ -43,27 +45,45 @@ const WeeklyCell = (props) => {
 
     const height = schedule
         ? {
-                height: (schedule.endHour - schedule.startHour) * 50 - 22 + 'px'
+                height: (schedule.endTime.hour - schedule.startTime.hour) * 50 - 22 + 'px'
             }
         : null;
 
-    const onClickDate = () => {
-        if (!active && !isResizing) { // 리사이징 중일 때 클릭 방지
-            setAddFormState({
-                ...addFormState,
-                active: true,
-                mode: 'add',
-                title: '',
-                curDate: date,
-                startHour: startHour,
-                endHour: startHour + 1
-            });
-        }
-    };
+	//빈 셀 클릭후 일정 추가
+	const onClickDate = () => {
+		if (!active&& !isResizing) {
+			const now = new Date();
+			const startHour = now.getHours();
+			const startMinute = now.getMinutes(); 
+			const endHour = startHour + 1;
+	
+			console.log("빈셀", { hour: startHour, minute: startMinute });
+	
+			setAddFormState({
+				...addFormState,
+				active: true,
+				mode: 'add',
+				title: '',
+				curDate: date, // Date 객체 그대로 유지
+				startTime: { 
+					hour: startHour, 
+					minute: startMinute, 
+					second: 0, 
+					nano:0 }, // 새로운 시간 형식 적용
+				endTime: { 
+					hour: endHour, 
+					minute: startMinute, 
+					second: 0, 
+					nano:0 } // 새로운 시간 형식 적용
+			});
+		}
+	};
+	
 
+    //일정 수정
     const onClickSchedule = (e, schedule) => {
         e.stopPropagation();
-        const { title, curDate, startHour, endHour } = schedule;
+        const { title, curDate, startTime, endTime } = schedule;
         if (!active && !isResizing) { // 리사이징 중일 때 클릭 방지
             setAddFormState({
                 ...addFormState,
@@ -71,15 +91,16 @@ const WeeklyCell = (props) => {
                 mode: 'edit',
                 title: title,
                 curDate: curDate,
-                startHour: startHour,
-                endHour: endHour
+                startTime: {...startTime},
+                endTime: {...endTime}
             });
         }
     };
 
+//일정 드래그 앤 드랍 이동
     const onDropSchedule = (e) => {
         e.preventDefault();
-        if (dragAndDrop.to.endHour > 24) return;
+        if (dragAndDrop.to.endTime.hour > 24) return;
 
         const { from, to, initialY } = dragAndDrop;
 
@@ -88,12 +109,20 @@ const WeeklyCell = (props) => {
         const hourDifference = Math.round(yDifference / 50); // 50px = 1시간
 
         // 새로운 시작 시간과 끝 시간 계산
-        const newStartHour = to.startHour + hourDifference;
-        const newEndHour = newStartHour + (from.endHour - from.startHour); // 기존 시간 차이를 유지
+        const newStartHour = to.startTime.hour + hourDifference;
+        // 기존 시간차 유지 + 끝 시간이 24를 넘지 않도록 보장
+        const newEndHour = Math.min(newStartHour + (from.endTime.hour - from.startTime.hour), 24);
 
         // 기존 일정 업데이트
         const updatedSchedule = userData.schedule.map(item =>
-            item === from ? { ...item, startHour: newStartHour, endHour: newEndHour, curDate: date } : item
+            item === from ? { ...item, 
+                startTime: { 
+                    ... from.startTime, 
+                    hour: newStartHour}, 
+                endTime: {
+                    ...from.endTime,
+                    hour: newEndHour}, 
+                curDate: date } : item
         );
 
         console.log("from", from);
@@ -113,24 +142,35 @@ const WeeklyCell = (props) => {
         });
     };
 
-    const onDragCell = (e) => {
-        if (!isResizing) { // 리사이징 중일 때 드래그 방지
-            setDragAndDrop({ ...dragAndDrop, from: schedule });
-        }
-    };
-
     const onDragEnterCell = (e) => {
         e.preventDefault();
         const { from } = dragAndDrop;
-        const diff = from.endHour - from.startHour;
-        const newScheduleForm = { title: from.title, curDate: date, startHour, endHour: startHour + diff };
+        console.log('드래그', from);
+        const diff = from.endTime.hour - from.startTime.hour;
+        const newScheduleForm = { title: from.title, curDate: date,
+            startTime :{
+                ...from.startTime,
+                hour: startHour
+            },
+            endTime:{
+                ...from.endTime,
+                hour: startHour + diff
+            }};
 
         // 현재 Y좌표 저장
         setDragAndDrop({ ...dragAndDrop, to: newScheduleForm, initialY: e.clientY });
 
         // 콘솔에 시작 시간 변화를 로그로 출력
-        console.log("Original start hour:", from.startHour);
+        console.log("Original start hour:", from.startTime.hour);
         console.log("New start hour", startHour);
+    };
+
+//리사이징
+
+    const onDragCell = (e) => {
+        if (!isResizing) { // 리사이징 중일 때 드래그 방지
+            setDragAndDrop({ ...dragAndDrop, from: schedule });
+        }
     };
 
     const onResizeMouseDown = (e, schedule) => {
@@ -138,19 +178,24 @@ const WeeklyCell = (props) => {
         e.stopPropagation(); // 클릭 이벤트 상위 전파 방지
 
         const initialY = e.clientY;
-        const initialEndHour = schedule.endHour;
+        const initialEndHour = schedule.endTime.hour;
 
         // 마우스 이동 핸들러 정의
         const onResizeMouseMove = (e) => {
             const newY = e.clientY;
             const hourDifference = Math.round((newY - initialY) / 50); // 50px을 1시간으로 가정
-            const newEndHour = Math.max(initialEndHour + hourDifference, schedule.startHour + 1); // 끝 시간이 시작 시간보다 작아지지 않도록
+
+            //시작시간보다 작아지지 않도록 +1, 24시간을 넘지 않도록
+            const newEndHour = Math.min(Math.max(initialEndHour + hourDifference, schedule.startTime.hour + 1), 24);
 
             // 일정의 끝 시간을 업데이트합니다.
             setUserData({
                 ...userData,
                 schedule: userData.schedule.map((item) =>
-                    item === schedule ? { ...item, endHour: newEndHour } : item
+                    item === schedule ? { ...item, 
+                        endTime: {
+                            ...schedule.endTime,
+                            hour: newEndHour} } : item
                 ),
             });
         };
@@ -184,7 +229,12 @@ const WeeklyCell = (props) => {
         );
 
     return (
-        <div className="weekly-cell" onClick={onClickDate} onDragEnter={onDragEnterCell} onDragOver={(e) => e.preventDefault()} onDrop={onDropSchedule}>
+        <div className="weekly-cell" 
+            onClick={onClickDate} 
+            onDragEnter={onDragEnterCell} 
+            onDragOver={(e) => e.preventDefault()} 
+            onDrop={onDropSchedule}>
+
             {schedule ? (
                 <div
                     className={`weekly-schedule ${isResizing ? 'resizing' : ''}`}
@@ -193,7 +243,7 @@ const WeeklyCell = (props) => {
                     draggable
                     onDragStart={(e) => onDragCell(e)}
                 >
-                    <p>{schedule.startHour + '시 ~ ' + schedule.endHour + '시'}</p>
+                    <p>{schedule.startTime.hour+':'+schedule.startTime.minute+'~'+schedule.endTime.hour+':'+schedule.endTime.minute}</p>
                     <p>{schedule.title}</p>
                     <div
                         className="resize-handle"
