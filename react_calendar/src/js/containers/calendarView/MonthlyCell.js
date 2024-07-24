@@ -91,7 +91,7 @@ const MonthlyCell = (props) => {
 	};
 
 	return (
-		<div className="monthly-cell" onClick={onClickDate} onDragEnter={onDragEnterCell} onDragEnd={onDropSchedule}>
+		<div className="monthly-cell" onClick={onClickDate} onDragEnter={onDragEnterCell} onDragEnd={onDropSchedule} onDragOver={(e) => e.preventDefault()} >
 			<p>{curDateStr}</p>
 
 			{schedule.map((a, i) => (
