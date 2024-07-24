@@ -85,7 +85,7 @@ const DailyCell = (props) => {
 
         // Y좌표의 차이 계산
         const yDifference = e.clientY - initialY;
-        const hourDifference = Math.round(yDifference / 50); // 50px = 1시간
+        const hourDifference = Math.floor(yDifference / 50); // 50px = 1시간
 
         // 새로운 시작 시간과 끝 시간 계산
         const newStartHour = to.startHour + hourDifference;
