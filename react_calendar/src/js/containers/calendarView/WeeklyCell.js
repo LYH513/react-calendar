@@ -44,13 +44,22 @@ const WeeklyCell = (props) => {
         };
     }, [isResizing]);
 
+    // 분값을 15분 단위로 구간 나누어 변환하는 함수
+    const to15MinRange = (minutes) => {
+        if (minutes < 15) return 0;
+        if (minutes < 30) return 15;
+        if (minutes < 45) return 30;
+        return 45;
+    };
+
     // 50은 일정 한칸의 크기 , 22는 마진값?
-    // 시간과 분을 시간 단위로 변환하여 높이 계산
+    // 시간과 분을 분 단위로 변환하여 높이 계산
     const height = schedule
-        ? {
-                height: ((schedule.endTime.hour + schedule.endTime.minute / 60) - (schedule.startTime.hour + schedule.startTime.minute / 60)) * 50 - 22 + 'px'
-            }
-        : null;
+    ? {
+            height: (( (schedule.endTime.hour * 60 + to15MinRange(schedule.endTime.minute)) - (schedule.startTime.hour * 60 + to15MinRange(schedule.startTime.minute)) ) / 15 * 50 - 22) + 'px'
+        }
+    : null;
+
 
 	//빈 셀 클릭후 일정 추가
 	const onClickDate = () => {
