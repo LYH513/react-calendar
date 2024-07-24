@@ -119,7 +119,7 @@ const MonthlyCell = (props) => {
 					draggable
 					onDragStart={(e) => onDragCell(e, a)}
 				>
-					<p>{a.startHour + '시 ~ ' + a.endHour + '시'}</p>
+					<p>{a.startTime.hour+':'+a.startTime.minute+'~'+a.endTime.hour+':'+a.endTime.minute}</p>
 					<p>{a.title}</p>
 				</div>
 			))}
