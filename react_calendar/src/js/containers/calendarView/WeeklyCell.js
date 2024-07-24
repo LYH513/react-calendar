@@ -15,8 +15,9 @@ const WeeklyCell = (props) => {
     const [userData, setUserData] = useUserData();
     const [dragAndDrop, setDragAndDrop] = useDragAndDrop();
     const [isResizing, setIsResizing] = useState(false); // 리사이징 상태 추가
-    
-    console.log("스케줄", schedule, startHour);
+
+    // console.log('주간 스케줄, 시간 프롭스', schedule, startHour);
+    const [propsHour, propsMin] = (typeof startHour === 'string' ? startHour.split(':') : ['0', '0']).map(Number);
 
     // 마우스 업 이벤트를 처리하여 리사이징 종료
     useEffect(() => {
@@ -43,21 +44,21 @@ const WeeklyCell = (props) => {
         };
     }, [isResizing]);
 
+    // 50은 일정 한칸의 크기 , 22는 마진값?
+    // 시간과 분을 시간 단위로 변환하여 높이 계산
     const height = schedule
         ? {
-                height: (schedule.endTime.hour - schedule.startTime.hour) * 50 - 22 + 'px'
+                height: ((schedule.endTime.hour + schedule.endTime.minute / 60) - (schedule.startTime.hour + schedule.startTime.minute / 60)) * 50 - 22 + 'px'
             }
         : null;
 
 	//빈 셀 클릭후 일정 추가
 	const onClickDate = () => {
 		if (!active&& !isResizing) {
-			const now = new Date();
-			const startHour = now.getHours();
-			const startMinute = now.getMinutes(); 
-			const endHour = startHour + 1;
-	
-			console.log("빈셀", { hour: startHour, minute: startMinute });
+			// const now = new Date();
+			// const startHour = now.getHours();
+			// const startMinute = now.getMinutes(); 
+			// const endHour = startHour + 1;
 	
 			setAddFormState({
 				...addFormState,
@@ -66,13 +67,13 @@ const WeeklyCell = (props) => {
 				title: '',
 				curDate: date, // Date 객체 그대로 유지
 				startTime: { 
-					hour: startHour, 
-					minute: startMinute, 
+					hour: propsHour, 
+					minute: propsMin, 
 					second: 0, 
 					nano:0 }, // 새로운 시간 형식 적용
 				endTime: { 
-					hour: endHour, 
-					minute: startMinute, 
+					hour: propsHour +1, 
+					minute: propsMin, 
 					second: 0, 
 					nano:0 } // 새로운 시간 형식 적용
 			});
@@ -106,29 +107,34 @@ const WeeklyCell = (props) => {
 
         // Y좌표의 차이 계산
         const yDifference = e.clientY - initialY;
-        const hourDifference = Math.round(yDifference / 50); // 50px = 1시간
+        const Difference = Math.round(yDifference / 50)*15; // 50px = 15분씩 , 분 형태로 바꿈
 
         // 새로운 시작 시간과 끝 시간 계산
-        const newStartHour = to.startTime.hour + hourDifference;
+        const newStartTotalMin = (to.startTime.hour*60)+to.startTime.minute + Difference;
+        
         // 기존 시간차 유지 + 끝 시간이 24를 넘지 않도록 보장
-        const newEndHour = Math.min(newStartHour + (from.endTime.hour - from.startTime.hour), 24);
+        const newEndHour = Math.min(newStartTotalMin + ((from.endTime.hour*60 + from.endTime.minute) - (from.startTime.hour*60 +from.startTime.minute)), 24*60);
 
         // 기존 일정 업데이트
         const updatedSchedule = userData.schedule.map(item =>
             item === from ? { ...item, 
                 startTime: { 
                     ... from.startTime, 
-                    hour: newStartHour}, 
+                    hour: Math.floor(newStartTotalMin/60),
+                    minute:  newStartTotalMin%60
+                }, 
                 endTime: {
                     ...from.endTime,
-                    hour: newEndHour}, 
+                    hour: Math.floor(newEndHour/60),
+                    minute: newEndHour%60
+                }, 
                 curDate: date } : item
         );
 
         console.log("from", from);
         console.log("to", to);
         console.log("Y difference:", yDifference);
-        console.log("New start hour:", newStartHour);
+        console.log("New start hour:", newStartTotalMin);
         console.log("New end hour:", newEndHour);
 
         // 일정 업데이트
@@ -146,15 +152,18 @@ const WeeklyCell = (props) => {
         e.preventDefault();
         const { from } = dragAndDrop;
         console.log('드래그', from);
-        const diff = from.endTime.hour - from.startTime.hour;
+        const diff = (from.endTime.hour*60 + from.endTime.minute) - (from.startTime.hour*60 +from.startTime.minute);
+
         const newScheduleForm = { title: from.title, curDate: date,
             startTime :{
                 ...from.startTime,
-                hour: startHour
+                hour: propsHour,
+                minute: propsMin
             },
             endTime:{
                 ...from.endTime,
-                hour: startHour + diff
+                hour: propsHour + Math.floor(diff/60),
+                minute: propsMin +(diff%60)
             }};
 
         // 현재 Y좌표 저장
@@ -162,7 +171,7 @@ const WeeklyCell = (props) => {
 
         // 콘솔에 시작 시간 변화를 로그로 출력
         console.log("Original start hour:", from.startTime.hour);
-        console.log("New start hour", startHour);
+        console.log("New start hour", propsHour);
     };
 
 //리사이징
