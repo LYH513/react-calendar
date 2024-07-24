@@ -56,6 +56,7 @@ const Weekly = () => {
 		() => {
 			const { firstDate, lastDate } = getFirstAndLastDate();
 			setCurSchedule(getSchedule(firstDate, lastDate, schedule));
+			console.log('주간 일정',curSchedule );
 		},
 		[ userData ]
 	);
@@ -91,7 +92,7 @@ const Weekly = () => {
 		let curDateSchedule = null;
 
 		for (let i = 0; i < curSchedule.length; i++) {
-			console.log('주간 curSchedule',startHour);
+			console.log('주간 curSchedule',curSchedule);
 			// console.log('주간 1',curDate);
 
 			if (curDate.getTime() === curSchedule[i].curDate.getTime() && curSchedule[i].startTime.hour === startHour) {

@@ -51,18 +51,18 @@ const Daily = () => {
     };
 
     const getCurDateSchedule = (curDate, startHour) => {
-        // 특정 날짜와 시간에 해당하는 일정을 반환
-        let curDateSchedule = null;
+		let curDateSchedule = null;
 
-        for (let i = 0; i < curSchedule.length; i++) {
-            if (curDate.getTime() === curSchedule[i].curDate.getTime() && curSchedule[i].startHour === startHour) {
-                curDateSchedule = curSchedule[i];
-                break;
-            }
-        }
+		for (let i = 0; i < curSchedule.length; i++) {
 
-        return curDateSchedule;
-    };
+			if (curDate.getTime() === curSchedule[i].curDate.getTime() && curSchedule[i].startTime.hour === startHour) {
+				curDateSchedule = curSchedule[i];
+				break;
+			}
+		}
+
+		return curDateSchedule;
+	};
 
     return (
         <div id="weekly-view"> {/* 일간 보기로 변경 */}
