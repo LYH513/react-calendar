@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import '../../../sass/app.css';
-import { editDate } from '../components/UserDataController';
 // store
 import { useErrorState } from '../../stores/errorState';
 import { useAddFormState } from '../../stores/addFormState';
@@ -65,7 +64,14 @@ const WeeklyCell = (props) => {
         return `${heightInPixels}px`;
     };
 
-    const height = schedule ? { height: calculateHeight(schedule.startTime, schedule.endTime) } : null;
+    // 일정 높이 업데이트를 위한 useEffect
+    const [height, setHeight] = useState('0px');
+
+    useEffect(() => {
+        if (schedule) {
+            setHeight(calculateHeight(schedule.startTime, schedule.endTime));
+        }
+    }, [schedule]);
 
     // 빈 셀을 클릭하여 일정을 추가하는 함수
     const onClickDate = () => {
@@ -80,12 +86,14 @@ const WeeklyCell = (props) => {
                     hour: propsHour, 
                     minute: propsMin, 
                     second: 0, 
-                    nano:0 }, // 새로운 시간 형식 적용
+                    nano: 0 
+                }, // 새로운 시간 형식 적용
                 endTime: { 
                     hour: propsHour + 1, 
                     minute: propsMin, 
                     second: 0, 
-                    nano:0 } // 새로운 시간 형식 적용
+                    nano: 0 
+                } // 새로운 시간 형식 적용
             });
         }
     };
@@ -116,26 +124,32 @@ const WeeklyCell = (props) => {
 
         // Y좌표의 차이 계산
         const yDifference = e.clientY - initialY;
-        const Difference = Math.round(yDifference / 50) * 15; // 50px = 15분씩 , 분 형태로 바꿈
+        const differenceInMinutes = Math.round(yDifference / 50) * 15; // 50px = 15분
 
         // 새로운 시작 시간과 끝 시간 계산
-        const newStartTotalMin = (to.startTime.hour * 60) + to.startTime.minute + Difference;
+        const newStartTotalMin = (to.startTime.hour * 60) + to.startTime.minute + differenceInMinutes;
+
+        // 시간 값이 음수가 되지 않도록 조정
+        const newStartHour = Math.max(Math.floor(newStartTotalMin / 60), 0);
+        const newStartMinute = Math.max(newStartTotalMin % 60, 0);
 
         // 기존 시간차 유지 + 끝 시간이 24를 넘지 않도록 보장
-        const newEndHour = Math.min(newStartTotalMin + ((from.endTime.hour * 60 + from.endTime.minute) - (from.startTime.hour * 60 + from.startTime.minute)), 24 * 60);
+        const newEndTotalMin = newStartTotalMin + ((from.endTime.hour * 60 + from.endTime.minute) - (from.startTime.hour * 60 + from.startTime.minute));
+        const newEndHour = Math.min(Math.floor(newEndTotalMin / 60), 24);
+        const newEndMinute = newEndTotalMin % 60;
 
         // 기존 일정 업데이트
         const updatedSchedule = userData.schedule.map(item =>
             item === from ? { ...item, 
                 startTime: { 
                     ...from.startTime, 
-                    hour: Math.floor(newStartTotalMin / 60),
-                    minute: newStartTotalMin % 60
+                    hour: newStartHour,
+                    minute: newStartMinute
                 }, 
                 endTime: {
                     ...from.endTime,
-                    hour: Math.floor(newEndHour / 60),
-                    minute: newEndHour % 60
+                    hour: newEndHour,
+                    minute: newEndMinute
                 }, 
                 curDate: date } : item
         );
@@ -143,8 +157,10 @@ const WeeklyCell = (props) => {
         console.log("from", from);
         console.log("to", to);
         console.log("Y difference:", yDifference);
-        console.log("New start hour:", newStartTotalMin);
+        console.log("New start hour:", newStartHour);
+        console.log("New start minute:", newStartMinute);
         console.log("New end hour:", newEndHour);
+        console.log("New end minute:", newEndMinute);
 
         // 일정 업데이트
         setUserData({ ...userData, schedule: updatedSchedule });
@@ -256,7 +272,7 @@ const WeeklyCell = (props) => {
             {schedule ? (
                 <div
                     className={`weekly-schedule ${isResizing ? 'resizing' : ''}`}
-                    style={height}
+                    style={{ height }} // 여기에 height를 직접 적용
                     onClick={(e) => onClickSchedule(e, schedule)}
                     draggable
                     onDragStart={(e) => onDragCell(e)}
