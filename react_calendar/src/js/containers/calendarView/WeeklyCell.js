@@ -51,6 +51,7 @@ const WeeklyCell = (props) => {
         if (minutes < 45) return 30;
         return 45;
     };
+    
     // 50은 일정 한칸의 크기 , 22는 마진값?, 15는 분범위
     // 시간과 분을 분 단위로 변환하여 높이 계산
     const height = schedule
