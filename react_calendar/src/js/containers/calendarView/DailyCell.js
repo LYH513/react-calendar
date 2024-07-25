@@ -139,7 +139,9 @@ const DailyCell = (props) => {
     // 일정을 드래그 앤 드랍으로 이동시키는 함수
     const onDropSchedule = (e) => {
         e.preventDefault();
-        if (dragAndDrop.to.endTime.hour > 24) return;
+
+        // 드래그 앤 드랍 데이터 확인
+        if (!dragAndDrop.from) return;
 
         const { from, to, initialY } = dragAndDrop;
 
@@ -154,9 +156,14 @@ const DailyCell = (props) => {
         const newStartHour = Math.max(Math.floor(newStartTotalMin / 60), 0);
         const newStartMinute = Math.max(newStartTotalMin % 60, 0);
 
-        // 기존 시간차 유지 + 끝 시간이 24를 넘지 않도록 보장
-        const newEndTotalMin = newStartTotalMin + ((from.endTime.hour * 60 + from.endTime.minute) - (from.startTime.hour * 60 + from.startTime.minute));
-        const newEndHour = Math.min(Math.floor(newEndTotalMin / 60), 24);
+        // 기존 시간차 유지 + 끝 시간이 23:59를 넘지 않도록 보장
+        const durationInMinutes = (from.endTime.hour * 60 + from.endTime.minute) - (from.startTime.hour * 60 + from.startTime.minute);
+        let newEndTotalMin = newStartTotalMin + durationInMinutes;
+
+        const maxEndMinute = 23 * 60 + 59;
+        newEndTotalMin = Math.min(newEndTotalMin, maxEndMinute);
+
+        const newEndHour = Math.floor(newEndTotalMin / 60);
         const newEndMinute = newEndTotalMin % 60;
 
         // 기존 일정 업데이트
@@ -241,8 +248,16 @@ const DailyCell = (props) => {
         const onResizeMouseMove = (e) => {
             const newY = e.clientY;
             const minDifference = Math.round((newY - initialY) / 50) * 15; // 50px = 15분
-            const newEndMinute = Math.min(Math.max(initialEndMinute + minDifference, schedule.startTime.hour * 60 + schedule.startTime.minute ), 24 * 60);
+            let newEndMinute = initialEndMinute + minDifference;
 
+            // 일정의 시작 시간을 초과하지 않도록 조정
+            const startMinute = schedule.startTime.hour * 60 + schedule.startTime.minute;
+            newEndMinute = Math.max(newEndMinute, startMinute);
+    
+            // 끝 시간이 23:59를 넘지 않도록 조정
+            const maxEndMinute = 23 * 60 + 59;
+            newEndMinute = Math.min(newEndMinute, maxEndMinute);
+    
             const newEndTime = {
                 hour: Math.floor(newEndMinute / 60),
                 minute: newEndMinute % 60
