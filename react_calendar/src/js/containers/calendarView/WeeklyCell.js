@@ -43,24 +43,45 @@ const WeeklyCell = (props) => {
         };
     }, [isResizing]);
 
-    // 분값을 15분 단위로 구간 나누어 변환하는 함수
-    const to15MinRange = (minutes) => {
-        if (minutes < 15) return 0;
-        if (minutes < 30) return 15;
-        if (minutes < 45) return 30;
-        return 45;
+    //시작시간과 끝시간 사이의 15분 단위 타임스탬프 갯수 확인
+    const toMinutes = (hour, minute) => hour * 60 + minute;
+
+    const toTime = (totalMinutes) => ({
+        hour: Math.floor(totalMinutes / 60),
+        minute: totalMinutes % 60
+    });
+
+    const get15MinIntervals = (startTime, endTime) => {
+        const startMinutes = toMinutes(startTime.hour, startTime.minute);
+        const endMinutes = toMinutes(endTime.hour, endTime.minute);
+    
+        // 15분 단위로 시작 시간을 올림하여 첫 번째 15분 단위로 설정
+        let intervalStart = Math.ceil(startMinutes / 15) * 15;
+    
+        // 종료 시간까지 반복하여 모든 15분 단위 타임스탬프를 수집
+        const intervals = [];
+        while (intervalStart <= endMinutes) {
+            intervals.push(toTime(intervalStart));
+            intervalStart += 15;
+        }
+
+        // 끝 시간이 15분 단위의 배수인지 확인
+        if (startTime.minute % 15 !== 0) {
+            return intervals.length+1
+        }
+
+        return intervals.length;
+    
     };
 
     // 일정의 높이를 계산하는 부분
     // 일정의 시작 시간과 끝 시간을 15분 단위로 계산하여 px 단위로 변환
     // 60 = 분 / 15 = 분단위 / 50 = 한칸 높이 / 22 = 마진값
     const calculateHeight = (startTime, endTime) => {
-        const startTotalMinutes = startTime.hour * 60 + startTime.minute;
-        const endTotalMinutes = endTime.hour * 60 + endTime.minute;
-        const intervalMinutes = endTotalMinutes - startTotalMinutes;
+        const intervals = get15MinIntervals(startTime, endTime);
 
-        // 15분 단위로 높이 조정
-        const heightInPixels = Math.ceil(intervalMinutes / 15) * 50 - 22;
+        // 15분 단위로 높이 조정 
+        const heightInPixels = intervals * 50 - 22;
         return `${heightInPixels}px`;
     };
 
@@ -220,7 +241,7 @@ const WeeklyCell = (props) => {
         const onResizeMouseMove = (e) => {
             const newY = e.clientY;
             const minDifference = Math.round((newY - initialY) / 50) * 15; // 50px = 15분
-            const newEndMinute = Math.min(Math.max(initialEndMinute + minDifference, schedule.startTime.hour * 60 + schedule.startTime.minute + 15), 24 * 60);
+            const newEndMinute = Math.min(Math.max(initialEndMinute + minDifference, schedule.startTime.hour * 60 + schedule.startTime.minute ), 24 * 60);
 
             const newEndTime = {
                 hour: Math.floor(newEndMinute / 60),
